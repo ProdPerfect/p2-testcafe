@@ -1,0 +1,15 @@
+/node_modules
+/ts-defs
+.idea
+.vscode
+/lib
+/site
+.sass-cache
+.publish
+/___test-screenshots___
+/screenshots
+yarn.lock
+package-lock.json
+Gemfile.lock
+.npmrc
+.DS_Store

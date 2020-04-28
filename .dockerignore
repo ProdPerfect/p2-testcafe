@@ -1,0 +1,6 @@
+*
+!docker
+!test
+!Gulpfile.js
+!.publishrc
+!*.tgz

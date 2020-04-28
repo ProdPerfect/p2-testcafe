@@ -1,0 +1,69 @@
+import { RequestHook } from 'testcafe';
+import path from 'path';
+import config from '../../../../../../config';
+
+const ReExecutablePromise = require(path.resolve('./lib/utils/re-executable-promise'));
+const pageUrl             = 'http://localhost:3000/fixtures/api/es-next/request-hooks/pages/index.html';
+
+class TestRequestHook extends RequestHook {
+    constructor () {
+        super(pageUrl);
+
+        this.onResponseCallCountInternal = 0;
+    }
+
+    get onResponseCallCount () {
+        return ReExecutablePromise.fromFn(async () => this.onResponseCallCountInternal);
+    }
+
+    async onRequest () {}
+
+    async onResponse () {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                this.onResponseCallCountInternal++;
+
+                resolve();
+            }, 100);
+        });
+    }
+}
+
+const hook1 = new TestRequestHook();
+const hook2 = new TestRequestHook();
+const hook3 = new TestRequestHook();
+
+fixture `Fixture`
+    .requestHooks(hook1)
+    .page(pageUrl);
+
+test
+    .requestHooks(hook2)
+    ('Test', async t => {
+        await t
+            .expect(hook1.onResponseCallCount).eql(config.retryTestPages ? 2 : 1)
+            .expect(hook2.onResponseCallCount).eql(config.retryTestPages ? 2 : 1);
+
+        await t
+            .addRequestHooks(hook3)
+            .expect(hook3.onResponseCallCount).eql(0)
+            .navigateTo(pageUrl)
+            .expect(hook1.onResponseCallCount).eql(config.retryTestPages ? 4 : 2)
+            .expect(hook2.onResponseCallCount).eql(config.retryTestPages ? 4 : 2)
+            .expect(hook3.onResponseCallCount).eql(config.retryTestPages ? 2 : 1);
+
+        await t
+            .addRequestHooks(hook1, hook2, hook3)
+            .navigateTo(pageUrl)
+            .expect(hook1.onResponseCallCount).eql(config.retryTestPages ? 6 : 3)
+            .expect(hook2.onResponseCallCount).eql(config.retryTestPages ? 6 : 3)
+            .expect(hook3.onResponseCallCount).eql(config.retryTestPages ? 4 : 2);
+
+        await t
+            .removeRequestHooks(hook1)
+            .removeRequestHooks(hook1)
+            .navigateTo(pageUrl)
+            .expect(hook1.onResponseCallCount).eql(config.retryTestPages ? 6 : 3)
+            .expect(hook2.onResponseCallCount).eql(config.retryTestPages ? 8 : 4)
+            .expect(hook3.onResponseCallCount).eql(config.retryTestPages ? 6 : 3);
+    });
