@@ -1,9 +1,5 @@
-/node_modules
-/ts-defs
 .idea
 .vscode
-/lib
-/site
 .sass-cache
 .publish
 /___test-screenshots___
